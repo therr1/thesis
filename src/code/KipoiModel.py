@@ -8,9 +8,10 @@ import pandas as pd
 import os
 
 class KipoiModel:
-    def __init__(self, model_name, snp_vcf_path='../data/snp_vcfs'):
+    def __init__(self, model_name, model_base_dir="DeepBind/Homo_sapiens/TF/", snp_vcf_path='../data/snp_vcfs'):
         self.model_name = model_name
-        self.model_path = 'DeepBind/Homo_sapiens/TF/' + model_name
+        self.model_path = model_base_dir + model_name
+        print(self.model_path)
         self.model = kipoi.get_model(self.model_path)
         self.snp_vcf_path = snp_vcf_path
 
@@ -38,7 +39,7 @@ class KipoiModel:
                         batch_size = 32,
                         dataloader_args=dataloader_arguments,
                         vcf_to_region=vcf_to_region,
-                        #evaluation_function_kwargs={'diff_types': {'diff': Diff("mean"), 'deepsea_effect': DeepSEA_effect("mean")}},
+                        evaluation_function_kwargs={'diff_types': {'diff': Diff("mean"), 'deepsea_effect': DeepSEA_effect("mean")}},
                         sync_pred_writer=writer)
 
 

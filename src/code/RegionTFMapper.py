@@ -1,12 +1,12 @@
 from kipoi_veff.parsers import KipoiVCFParser
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 import math
 import csv
 import pandas as pd
 from CombinerFunctions import *
 import time
-
+import sys
 
 class RegionTFToPhenotype:
     def __init__(self, gwas_file, model_name, chrom, function="dot", num_regions=100):
@@ -35,10 +35,10 @@ class RegionTFToPhenotype:
         if self.gwas_df == None:
             self.process_gwas_df()
         tstats = np.array(self.gwas_df['tstat'])
-        plt.hist(tstats,bins=200)
-        plt.title('Histogram of TStats for GWAS Summary Statistics')
-        plt.xlabel('TStat')
-        plt.show()
+#        plt.hist(tstats,bins=200)
+#        plt.title('Histogram of TStats for GWAS Summary Statistics')
+#        plt.xlabel('TStat')
+#        plt.show()
 
 
     def create_pval_dictionary(self):
@@ -130,7 +130,11 @@ class RegionTFToPhenotype:
 
 
 if __name__ == '__main__':
-    pass
+    gwas_file = sys.argv[1]
+    model = sys.argv[2]
+    chrom = sys.argv[3]
+    rtp  = RegionTFToPhenotype(gwas_file, model, chrom)
+    rtp.create_save_file()
     #RTP = RegionTFToPhenotype('../data/gwas_files/20544_2.gwas.imputed_v3.both_sexes.tsv', 'D00299.003_SELEX_ATF7', '3')
     #RTP.create_vectors()
 #RTP.z_score_hist()
