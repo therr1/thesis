@@ -4,6 +4,7 @@ import numpy as np
 import math
 import csv
 import pandas as pd
+import os
 from CombinerFunctions import *
 import time
 import sys
@@ -100,10 +101,12 @@ class RegionTFToPhenotype:
 
     def create_save_file(self, file_name=None):
         if file_name == None:
-            file_name = '../data/output/' + self.gwas_file_number + '/' + self.model_name + '/' + self.chrom + ".csv"
+            dir_name = '../data/output/' + self.gwas_file_number + '/' + self.model_name + '/'
         # print(self.gwas_file_number)
         # print(self.model_name)
+        os.makedirs(dir_name)
 
+        file_name = dir_name + self.chrom + ".csv"
         score_array = self.create_score_array()
 
         with open(file_name, 'w') as f:
