@@ -50,11 +50,8 @@ class Autoencoder:
 #         return x_train
 
 if __name__ == '__main__':
-    dl = VaeLoader("../data/model_scores")
+    dl = VaeLoader("../data/model_scores", limit=50, chrom=3)
     x_training_data = dl.get_training_data()
     autoe = Autoencoder(dl)
     autoe.create_encoder()
-
-
-
 

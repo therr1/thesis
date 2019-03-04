@@ -7,21 +7,27 @@ import math
 
 
 class VaeLoader:
-    def __init__(self, path):
+    def __init__(self, path, chrom=None, limit=10000):
         self.path = path
         self.model_names = set()
         self.snps = {}
+        self.chrom = chrom
+        self.limit = limit
 
     def build_snps(self):
         if len(self.snps) != 0:
             return None
         else:
+            process_count=0
             #iterate through files
             #self.process_file("/Users/therr/Documents/meng/research/thesis/src/data/output/20002_1286/DeepBind/Homo_sapiens/TF/D00303.002_SELEX_BARX1/1.csv")
             for subdir, dirs, files in os.walk(self.path):
                 for filename in files:
-                    self.process_file(os.path.join(subdir, filename))
-
+                    if self.chrom == None or str(self.chrom) == filename.split('.')[0]:    
+                        self.process_file(os.path.join(subdir, filename))
+                        process_count+=1
+                if process_count >= self.limit:
+                    return None
 
     def process_file(self, filename):
         model_name = filename.split('/')[-2]
