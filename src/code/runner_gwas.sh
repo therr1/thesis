@@ -3,6 +3,7 @@ conda activate thesis2
 cd /broad/compbio/therr/thesis/src/code
 modelname=$1
 chrom=$SGE_TASK_ID
-for filename in ../gwas_files/*.tsv; do
+#chrom=$2
+for filename in ../data/gwas_files/*.tsv; do
   python RegionTFMapper.py ${filename} ${modelname} ${chrom}
 done

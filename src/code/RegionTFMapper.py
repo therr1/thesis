@@ -99,16 +99,19 @@ class RegionTFToPhenotype:
 
 
 
-    def create_save_file(self, file_name=None):
+    def create_save_file(self, file_name=None, remake=False):
         if file_name == None:
-            dir_name = '../data/output/' + self.gwas_file_number + '/' + self.model_name + '/'
+            dir_name = '../data/output/' + self.gwas_file_number + '/' + self.model_name
         # print(self.gwas_file_number)
         # print(self.model_name)
-        os.makedirs(dir_name)
+        if not os.path.isdir(dir_name): 
+            os.makedirs(dir_name)
 
-        file_name = dir_name + self.chrom + ".csv"
+        file_name = dir_name + '/' + self.chrom + ".csv"
+        if os.path.isfile(file_name) and not remake:
+            print("file already exists")
+            return None
         score_array = self.create_score_array()
-
         with open(file_name, 'w') as f:
             writer = csv.writer(f)
             writer.writerows(score_array)
