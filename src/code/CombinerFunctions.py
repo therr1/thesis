@@ -2,9 +2,17 @@ import numpy as np
 
 class FunctionGetter:
 
-    def get_function(name):
+    def get_function(name, rinverse=None):
         if name == "dot":
             return lambda x,y : np.dot(x,y)
+
+        if name == "corr":
+            def compute_corr(x,y):
+                return x.dot(rinverse).dot(y)
+
+
+            return compute_corr
+
 
 
 # x = np.array([1,2,3])

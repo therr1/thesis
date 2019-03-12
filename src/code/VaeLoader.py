@@ -49,6 +49,7 @@ class VaeLoader:
         model_names_list = list(self.model_names)
         print(model_names_list)
         for snp in self.snps:
+            print(snp)
             vector = []
             values = self.snps[snp]
             for model_name in model_names_list:
@@ -64,6 +65,14 @@ class VaeLoader:
             all_vectors.append(vector)
         return np.array(all_vectors)
 
+    def get_labels(self):
+
+        if len(self.snps) == 0:
+            self.build_snps()
+        all_snps = []
+        for snp in self.snps:
+            all_snps.append(snp)
+        return all_snps
 
     def get_dim(self):
         if len(self.snps) == 0:

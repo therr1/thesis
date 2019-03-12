@@ -5,6 +5,8 @@ from keras.losses import mse, binary_crossentropy
 import numpy as np
 from VaeLoader import VaeLoader
 from keras import backend as K
+import csv
+
 
 
 
@@ -73,17 +75,36 @@ class Autoencoder:
 
 
 
-    def train_encoder(self, epochs=10):
+    def train_encoder(self, epochs=100):
         self.autoencoder.fit(self.training_data,
                 epochs=epochs,
                 batch_size=256,
                 shuffle=True)
         self.is_trained = True
 
-    def get_encodings(self):
+    def get_encodings(self, epochs=100):
         if not self.is_trained:
-            self.train_encoder()
+            self.train_encoder(epochs=epochs)
         predictions = self.encoder.predict(self.training_data)
+        return predictions[2]
+
+    def save_encodings(self, outpath='../data/vae_results.csv', epochs=100):
+        result_file = open(outpath,'w')
+        wr = csv.writer(result_file)
+
+        labels = self.dataloader.get_labels()
+        predictions = self.get_encodings(epochs=epochs)
+        print(len(labels))
+        print(len(predictions))
+        for ix, prediction in enumerate(predictions):
+            final_line = []
+            prediction = list(prediction)
+            label = labels[ix]
+            final_line.append(label)
+            final_line.extend(prediction)
+            wr.writerow(final_line)
+
+
 
 def sampling(args):
     """Reparameterization trick by sampling from an isotropic unit Gaussian.
@@ -115,9 +136,9 @@ def sampling(args):
 #         return x_train
 
 if __name__ == '__main__':
-    dl = VaeLoader("../data/model_scores", limit=50, chrom=3)
+    dl = VaeLoader("../data/model_scores", limit=10000, chrom=3)
     x_training_data = dl.get_training_data()
     autoe = Autoencoder(dl)
     # autoe.create_encoder()
-    autoe.get_encodings()
+    autoe.save_encodings(epochs=100)
 

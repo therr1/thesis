@@ -8,9 +8,11 @@ import os
 from CombinerFunctions import *
 import time
 import sys
+from GenotypeMatrix import GenotypeMatrix
 
 class RegionTFToPhenotype:
-    def __init__(self, gwas_file, model_name, chrom, function="dot", num_regions=100):
+    def __init__(self, gwas_file, model_name, chrom, function="corr", window_size = 100000):
+        self.window_size = window_size
         self.model_name = model_name
         self.chrom = chrom
         self.gwas_file = gwas_file
@@ -19,8 +21,7 @@ class RegionTFToPhenotype:
         self.function = function
         #self.process_gwas_df()
         self.gwas_df = None
-        self.num_regions = num_regions
-
+        self.window_size = window_size
 
 
     def process_gwas_df(self):
@@ -62,36 +63,60 @@ class RegionTFToPhenotype:
         all_elements = [el for el in vcf_reader]
         vcf_df = pd.DataFrame(all_elements)
 
-        subset_gwas = self.gwas_df[['location','tstat','pval']]
+        subset_gwas = self.gwas_df[['location','tstat','pval', 'ref', 'alt']]
         subset_gwas['location'] = pd.to_numeric(subset_gwas['location'])
 
         vcf_df['variant_pos'] = pd.to_numeric(vcf_df['variant_pos'])
 
-        merged_df = pd.merge(vcf_df, subset_gwas, how='inner', left_on=['variant_pos'], right_on=['location'])
-        merged_df = merged_df.dropna()
+        print(vcf_df.columns)
+        merged_df = pd.merge(vcf_df, subset_gwas, how='inner', left_on=['variant_pos', 'variant_ref', 'variant_alt'], right_on=['location','ref','alt'])
+        #merged_df = merged_df.dropna()
+        merged_df = merged_df.drop_duplicates(subset=['location','ref','alt'])
         min_val = min(merged_df['variant_pos'])
         max_val = max(merged_df['variant_pos'])
-        print(merged_df.shape)
+        #print(merged_df.shape)
 
         number_of_bases = (max_val - min_val)
 
 
         final_values = []
-        for i in range(self.num_regions):
-            range_min = min_val + int(number_of_bases * i /float(self.num_regions))
-            range_max = min_val + int(number_of_bases * (i + 1) /float(self.num_regions))
+
+        max_fal = 300000
+        range_min = 0
+        while range_min < max_val:
+            print(range_min)
+            range_max = range_min + self.window_size
             temp_df = merged_df[merged_df['location'].between(range_min, range_max)]
 
+
+            locations = temp_df[['location','ref','alt']]
+
+            locations = [tuple(x) for x in locations.values]
+            time.sleep(5)
+
+            temp_df = temp_df.set_index(['location','ref','alt'])
+
+
+            rinverse = None
+            print(len(locations))
+            if self.function == 'corr':
+                print("making rinverse")
+                gm = GenotypeMatrix(self.chrom, range_min, range_max)
+                rinverse, indices = gm.get_Rinverse(locations=locations)
+                print(rinverse)
+                print(len(indices))
+                temp_df = temp_df[temp_df.index.isin(indices)]
+                print(len(temp_df))
 
             kipoi_scores = np.array(temp_df[temp_df.columns[5]])
             t_stats = np.array(temp_df['tstat'])
 
-            combiner = FunctionGetter.get_function(self.function)
 
-            # print(t_stats)
-            # time.sleep(100)
+            combiner = FunctionGetter.get_function(self.function, rinverse=rinverse)
+
             score = combiner(t_stats,kipoi_scores)
             final_values.append([range_min, range_max, score])
+            range_min += self.window_size
 
         return final_values
 
@@ -101,7 +126,7 @@ class RegionTFToPhenotype:
 
     def create_save_file(self, file_name=None, remake=False):
         if file_name == None:
-            dir_name = '../data/output/' + self.gwas_file_number + '/' + self.model_name
+            dir_name = '../data/output2/' + self.gwas_file_number + '/' + self.model_name
         # print(self.gwas_file_number)
         # print(self.model_name)
         if not os.path.isdir(dir_name): 
@@ -136,6 +161,7 @@ class RegionTFToPhenotype:
 
 
 if __name__ == '__main__':
+    #python RegionTFMapper.py ../data/gwas_files/20544_2.gwas.imputed_v3.both_sexes.tsv DeepBind/Homo_sapiens/TF/D00299.003_SELEX_ATF7 3
     gwas_file = sys.argv[1]
     model = sys.argv[2]
     chrom = sys.argv[3]
