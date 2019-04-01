@@ -8,7 +8,7 @@ import os
 from CombinerFunctions import *
 import time
 import sys
-from GenotypeMatrix import GenotypeMatrix
+from GenotypeMatrix2 import GenotypeMatrix2
 
 class RegionTFToPhenotype:
     def __init__(self, gwas_file, model_name, chrom, function="corr", window_size = 100000):
@@ -23,7 +23,8 @@ class RegionTFToPhenotype:
         self.gwas_df = None
         self.window_size = window_size
 
-
+        self.gm = GenotypeMatrix2(self.chrom)
+    
     def process_gwas_df(self):
         self.gwas_df = pd.read_csv(self.gwas_file, sep='\t')
         new = self.gwas_df["variant"].str.split(":", expand=True) 
@@ -68,9 +69,8 @@ class RegionTFToPhenotype:
 
         vcf_df['variant_pos'] = pd.to_numeric(vcf_df['variant_pos'])
 
-        print(vcf_df.columns)
         merged_df = pd.merge(vcf_df, subset_gwas, how='inner', left_on=['variant_pos', 'variant_ref', 'variant_alt'], right_on=['location','ref','alt'])
-        #merged_df = merged_df.dropna()
+        merged_df = merged_df.dropna(subset=['tstat'])
         merged_df = merged_df.drop_duplicates(subset=['location','ref','alt'])
         min_val = min(merged_df['variant_pos'])
         max_val = max(merged_df['variant_pos'])
@@ -81,40 +81,28 @@ class RegionTFToPhenotype:
 
         final_values = []
 
-        max_fal = 300000
         range_min = 0
         while range_min < max_val:
-            print(range_min)
             range_max = range_min + self.window_size
             temp_df = merged_df[merged_df['location'].between(range_min, range_max)]
 
-
             locations = temp_df[['location','ref','alt']]
-
             locations = [tuple(x) for x in locations.values]
-            time.sleep(5)
-
             temp_df = temp_df.set_index(['location','ref','alt'])
-
-
             rinverse = None
-            print(len(locations))
             if self.function == 'corr':
-                print("making rinverse")
-                gm = GenotypeMatrix(self.chrom, range_min, range_max)
-                rinverse, indices = gm.get_Rinverse(locations=locations)
-                print(rinverse)
-                print(len(indices))
-                temp_df = temp_df[temp_df.index.isin(indices)]
-                print(len(temp_df))
-
+                rinverse, indices = self.gm.get_Rinverse(locations)
+                if indices is not None: 
+                    reversed_indices = [(a,c,b) for (a,b,c) in indices]
+                    temp_df = temp_df[temp_df.index.isin(indices) | temp_df.index.isin(reversed_indices)]
+               
             kipoi_scores = np.array(temp_df[temp_df.columns[5]])
             t_stats = np.array(temp_df['tstat'])
 
 
             combiner = FunctionGetter.get_function(self.function, rinverse=rinverse)
-
             score = combiner(t_stats,kipoi_scores)
+            
             final_values.append([range_min, range_max, score])
             range_min += self.window_size
 
@@ -165,8 +153,12 @@ if __name__ == '__main__':
     gwas_file = sys.argv[1]
     model = sys.argv[2]
     chrom = sys.argv[3]
+    remake=False
+    if len(sys.argv) == 5:
+        remake = True
+    print(gwas_file + ' ' + model + ' ' + chrom)
     rtp  = RegionTFToPhenotype(gwas_file, model, chrom)
-    rtp.create_save_file()
+    rtp.create_save_file(remake=remake)
     #RTP = RegionTFToPhenotype('../data/gwas_files/20544_2.gwas.imputed_v3.both_sexes.tsv', 'D00299.003_SELEX_ATF7', '3')
     #RTP.create_vectors()
 #RTP.z_score_hist()

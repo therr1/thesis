@@ -14,14 +14,14 @@ class GenotypeMatrix:
         self.start = start
         self.end = end
 
-        self.vcf_file = '../data/1kg/chr' + str(chrom) + '.vcf.gz'
+        self.vcf_file = '/broad/compbio/data/1KG_phase3/vcf/chr' + str(chrom) + '.vcf.gz'
         self.dataframe = None
 
     def get_dataframe(self):
         all_variants = {}
 
         reader = vcf.Reader(filename=self.vcf_file, compressed=True)
-        entries = reader.fetch(3,self.start,self.end)
+        entries = reader.fetch(int(self.chrom),self.start,self.end)
         for entry in entries:
             position = entry.POS
             reference = entry.alleles[0]
@@ -36,7 +36,6 @@ class GenotypeMatrix:
             all_variants[(position,reference,alternate)] = inner_dict
 
         final_dataframe = pd.DataFrame.from_dict(all_variants, orient='index')
-        print(final_dataframe)
         final_dataframe.fillna(0)
         self.dataframe = final_dataframe
 
@@ -45,7 +44,6 @@ class GenotypeMatrix:
             self.get_dataframe()
         matrix = None
         indices = np.array(self.dataframe.index)
-        print(locations)
         if locations is None:
             matrix = self.dataframe.values
         else:
@@ -57,6 +55,8 @@ class GenotypeMatrix:
 
         matrix = matrix.transpose()
         matrix = matrix/math.sqrt(num_individuals)
+        if matrix.shape[1] == 0:
+            return None, None
         u,s,vh = np.linalg.svd(matrix)
         variances= s*s
         total_variance = sum(variances)
@@ -84,8 +84,8 @@ class GenotypeMatrix:
 
 
 if __name__ == '__main__':
-    gm = GenotypeMatrix(3, 50000,65000)
-    locations = [(63664, 'T', 'G'),(63701, 'C', 'A')]
+    gm = GenotypeMatrix(3, 1,100000)
+    locations = []
     #locations = None
     r_inv, indices = gm.get_Rinverse(locations=locations)
     print(indices)

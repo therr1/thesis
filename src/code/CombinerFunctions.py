@@ -9,7 +9,8 @@ class FunctionGetter:
         if name == "corr":
             def compute_corr(x,y):
                 return x.dot(rinverse).dot(y)
-
+            if rinverse is None:
+                return lambda x,y : np.dot(x,y)
 
             return compute_corr
 

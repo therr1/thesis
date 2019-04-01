@@ -41,13 +41,17 @@ class TensorAnalyzer:
         if len(self.phenotypes) != 0:
             return None
         else:
+            counter = 0
             #iterate through documents
             #self.process_file("/Users/therr/Documents/meng/research/thesis/src/data/output/20002_1286/DeepBind/Homo_sapiens/TF/D00303.002_SELEX_BARX1/1.csv")
             for subdir, dirs, files in os.walk(self.path):
                 for filename in files:
+                    counter += 1
                     self.process_file(os.path.join(subdir, filename))
+                    if (counter % 100) == 0:
+                        print(counter)
         self.dataframe = pd.concat({k: pd.DataFrame(v) for k, v in self.phenotypes.items()})
-
+        self.dataframe.to_pickle('../data/tensor.pkl')
 
 
 

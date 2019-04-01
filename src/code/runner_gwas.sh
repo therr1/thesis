@@ -5,5 +5,5 @@ modelname=$1
 chrom=$SGE_TASK_ID
 #chrom=$2
 for filename in ../data/gwas_files/*.tsv; do
-  python RegionTFMapper.py ${filename} ${modelname} ${chrom}
+  python -u RegionTFMapper.py ${filename} ${modelname} ${chrom}
 done

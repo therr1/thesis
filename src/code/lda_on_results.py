@@ -1,13 +1,15 @@
 import gensim
 from gensim.corpora import Dictionary
 import os
+from gensim.test.utils import datapath
 
 class LDA_Model:
-    def __init__(self,path,direction):
+    def __init__(self,path,direction,chrom=3):
         """direction for words: 1 is tf, 2 is region, 3 is phenotype"""
         self.path = path
         self.direction = direction
         self.documents = {}
+        self.chrom = chrom
 
 
     def process_file(self, filepath):
@@ -16,6 +18,11 @@ class LDA_Model:
         phenotype = elements[data_index + 2]
         tf = elements[-2]
         chrom = elements[-1].split('.')[0]
+        if self.chrom is not None:
+            if self.chrom != float(chrom):
+                return None
+        print(filepath)
+
         with open(filepath) as f:
             counter = 0
             for line in f:
@@ -46,7 +53,8 @@ class LDA_Model:
 
         for idx, topic in lda.print_topics(-1):
             print('Topic: {} Word: {}'.format(idx, topic))
-
+        temp_file = datapath("model")
+        lda.save(temp_file)
 
 
 

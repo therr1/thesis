@@ -19,10 +19,14 @@ class GenotypeMatrix2:
 
     def get_matrix(self, variants):
         mask = self.bim_indexed.index.isin(variants)
+        variants_reversed = [(a,c,b) for (a,b,c) in variants]
+        mask2 = self.bim_indexed.index.isin(variants_reversed)
+        mask = mask | mask2
         matches = self.bim[mask][self.indexes]
         people = self.bim_indexed['i'][mask].to_numpy()
         rows = self.bed[people].compute()
         rows_fixed = 2 - rows
+        matches = [tuple(x) for x in matches.values]
         return rows_fixed, matches
 
 
@@ -30,8 +34,10 @@ class GenotypeMatrix2:
     def get_Rinverse(self, variants, var_cutoff = 0.99):
         matrix, matches = self.get_matrix(variants)
         num_individuals = matrix.shape[1]
-
+        if matrix.shape[0] == 0:
+            return None, None
         matrix = matrix.transpose()
+        matrix[np.isnan(matrix)] = 0
         matrix = matrix/math.sqrt(num_individuals)
         u,s,vh = np.linalg.svd(matrix)
         variances= s*s
@@ -60,10 +66,14 @@ class GenotypeMatrix2:
 
 
 if __name__ == '__main__':
-    gm = GenotypeMatrix2(3)
-    locations = [(63664, 'T', 'G'),(63701, 'C', 'A')]
+    gm = GenotypeMatrix2(1)
+    variants =  [ 
+                (11008, 'C', 'G'),
+                (11009, 'C', 'G'),
+                (173052, 'A', 'C')
+                ]
     #locations = None
-    r_inv, indices = gm.get_Rinverse(locations)
+    r_inv, indices = gm.get_Rinverse(variants)
     print(indices)
     print(r_inv)
 
